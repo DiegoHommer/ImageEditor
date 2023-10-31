@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="HorizontalFlipButton">
     <property name="geometry">
      <rect>
       <x>440</x>
@@ -27,7 +27,7 @@
      <string>Horizontal</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_2">
+   <widget class="QPushButton" name="GrayOutButton">
     <property name="geometry">
      <rect>
       <x>440</x>
@@ -40,7 +40,7 @@
      <string>Gray Out</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_3">
+   <widget class="QPushButton" name="VerticalFlipButton">
     <property name="geometry">
      <rect>
       <x>440</x>
@@ -63,7 +63,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_4">
+   <widget class="QPushButton" name="QuantizeButton">
     <property name="geometry">
      <rect>
       <x>440</x>
@@ -102,7 +102,7 @@
      <string>Mirror</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_5">
+   <widget class="QPushButton" name="ImportButton">
     <property name="geometry">
      <rect>
       <x>540</x>

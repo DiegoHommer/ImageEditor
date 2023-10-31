@@ -1,12 +1,14 @@
 #include <QApplication>
+#include <QLabel>
 #include "mainwindow.h"
 
 using namespace std;
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
-    return a.exec();
+    QApplication app(argc, argv);
+    MainWindow tools;
+    tools.setWindowTitle("Tools");
+    tools.show();
+    return app.exec();
 }

@@ -14,17 +14,13 @@ MainWindow::~MainWindow()
 }
 
 
-void MainWindow::on_pushButton_2_clicked()
-{
-
-}
 
 
-void MainWindow::on_pushButton_5_clicked()
+void MainWindow::on_ImportButton_clicked()
 {
     QString imagePath = QFileDialog::getOpenFileName(this, tr("Open File"),
-                                                    "C:/",
-                                                    tr("Images (*.png *.xpm *.jpg)"));
+                                                     "C:/",
+                                                     tr("Images (*.png *.xpm *.jpg)"));
     if(imagePath != nullptr)
     {
         imageObj = new QImage();
