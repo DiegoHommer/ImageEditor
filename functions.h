@@ -3,104 +3,101 @@
 
 #include <bits/stdc++.h>
 #include <iostream>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+#include <QImage>
 
 using namespace std;
 
-void generate_gray_img(unsigned char *img, int width, int height, int channels)
+void generate_gray_img(QImage &img)
 {
-    int img_size = width * height * channels;
-    int gray_img_size = width * height; // Como temos apenas um canal, temos dimensões widthXheight
-
-    unsigned char *gray_img = new unsigned char [gray_img_size];
-
-    for(unsigned char *p_img = img, *p_gray_img = gray_img; p_img != img + img_size; p_img += channels, p_gray_img += 1)
+    for(int y = 0; y < img.height(); y++)
     {
-        // Aplicação da fórmula L = 0.299*R + 0.587*G + 0.114*B em cada pixel da nova imagem
-        *p_gray_img = (0.299 * (*p_img)) + (0.587 * (*(p_img + 1))) + (0.114 * (*(p_img + 2)));
+        for(int x = 0; x < img.width(); x++)
+        {
+            QColor color = img.pixelColor(x, y);
+            int grey = (0.299 * color.red())+(0.587 * color.green()) + (0.114 * color.blue());
+            img.setPixelColor(x,y,QColor(grey,grey,grey));
+        }
     }
 
-    stbi_write_jpg("grama_cinza.jpg", width, height, 1, gray_img, 100);
-    stbi_image_free(gray_img);
-
-    return;
 }
 
-void mirror(unsigned char *img, int width, int height, int channels, bool option)
+void mirror(QImage &img, bool option)
 {
-    int img_size = width * height * channels;
+    QImage temp_img = img;
+    int h_temp = temp_img.height();
+    int w_temp = temp_img.width();
 
-    unsigned char *inv_img = new unsigned char [img_size];
-    if(option) // OPÇÃO: ESPELHAMENTO VERTICAL
+    switch(option)
     {
-        // Loop percorre linha a linha das imagens (imagem original: 1º -> última | imagem nova: última -> 1º)
-        for(unsigned char *p_img = img, *p_inv = inv_img + img_size - (width * channels); p_img != img + img_size; p_img += width * channels, p_inv -= width * channels)
-        {
-            //  (1° linha antiga -> última linha nova | 2º -> antepenúltima...)
-            memcpy(p_inv, p_img, width * channels);
-        }
-    }else // OPÇÃO: ESPELHAMENTO HORIZONTAL
-    {
-        // Loop percorre linha a linha das imagens (ambas imagens: 1º -> última)
-        for(unsigned char *p_img = img, *p_inv = inv_img; p_img != img + img_size; p_img += width * channels, p_inv += width * channels)
-        {
-            // Percorre pixel a pixel da forma que: (1º pixel da linha antiga -> último pixel da linha nova | 2º -> antepenúltimo...)
-            for(unsigned char *pp_img = p_img, *pp_inv = ((p_inv + (width * channels)) - channels); pp_inv >= p_inv; pp_img += channels, pp_inv -= channels)
+        case 0:
+            for(int y = 0; y < h_temp; y += 1)
             {
-                memcpy(pp_inv, pp_img, channels);
+                // Pointer to source row (1º row -> 2º row...)
+                uchar* sourceRow = temp_img.scanLine(y);
+
+                // Pointer to target row (last row -> penultimate row...)
+                uchar* targetRow = img.scanLine(h_temp - y - 1);
+
+                // Copies the source row data (pixels) to target row
+                memcpy(targetRow, sourceRow, temp_img.bytesPerLine());
             }
-        }
+            break;
+
+        case 1:
+            for(int y = 0; y < h_temp; y += 1)
+            {
+                for(int x = 0; x < w_temp; x += 1)
+                {
+                    img.setPixel(w_temp - x - 1, y, temp_img.pixel(x,y));
+                }
+            }
+            break;
     }
-
-    stbi_write_jpg("grama_inv.jpg", width, height, channels, inv_img, 100);
-    stbi_image_free(inv_img);
-
-    return;
 }
 
-void quantization(unsigned char* img, int width, int height, int n)
+void quantize(QImage &img, int num_shades)
 {
-    int max_shade = INT_MIN, min_shade = INT_MAX;
-    int img_size = width * height, tam_int;
+    int max_shade = INT_MIN, min_shade = INT_MAX, interval_size;
     vector<float> bins;
+    int h_temp = img.height();
+    int w_temp = img.width();
 
-    // Alocando espaço para nova imagem
-    unsigned char *new_img = new unsigned char [img_size];
-
-    // Procura pelo tom mais intenso e menos intenso da imagem
-    for(unsigned char *p_img = img; p_img != img + img_size; p_img += 1)
+    // Looks for the most and least intense shade in the image
+    for(int y = 0; y < h_temp; y++)
     {
-        if(*p_img > max_shade) max_shade = *p_img;
-        if(*p_img < min_shade) min_shade = *p_img;
+        for(int x = 0; x < w_temp; x++)
+        {
+            int grayscaleValue = qRed(img.pixel(x,y));
+            if(grayscaleValue < min_shade) min_shade = grayscaleValue;
+            if(grayscaleValue > max_shade) max_shade = grayscaleValue;
+        }
     }
-    tam_int = max_shade - min_shade + 1;
+    interval_size = max_shade - min_shade + 1;
 
-    if(tam_int > n)
+    if(interval_size > num_shades)
     {
-        int i = 0, center;
-        float tb = tam_int / n, upper;
+            int i = 0;
+            int center;
+            float tb = static_cast<float>(interval_size) / num_shades;
+            float upper;
 
-        // Criação dos intervalos (bins) para quantização
-        for(upper = min_shade - 0.5; i <= n + 1; i++, upper += tb)
-        {
-            bins.push_back(upper);
-        }
+            // Creation of the intervals (bins) for quantizing
+            for(upper = min_shade - 0.5; i <= num_shades + 1; i++, upper += tb)
+            {
+                bins.push_back(upper);
+            }
 
-        // Quantização da imagem
-        for(unsigned char *p_img = img, *p_newimg = new_img; p_img != img + img_size; p_img += 1, p_newimg += 1)
-        {
-            auto it = upper_bound(bins.begin(), bins.end(), *p_img); // Procura bin do tom do pixel imagem original
-            center = (*(it - 1) + *(it)) / 2;  // Grava o inteiro mais próximo do centro desse bin
-            *p_newimg = (unsigned char)center; // Pixel correspondente da nova imagem = center
-        }
-
-        stbi_write_jpg("grama_quantizada.jpg", width, height, 1, new_img, 100);
+            // Image quantization
+            for(int y = 0; y < h_temp; y++)
+            {
+                for(int x = 0; x < w_temp; x++)
+                {
+                    auto it = upper_bound(bins.begin(), bins.end(), img.pixelColor(x,y).red()); // Looks for the bin correspondent to the original image shade
+                    center = std::clamp(static_cast<int>((*(it - 1) + *(it)) / 2), min_shade, max_shade);;  // Saves the closest integer to the center of the bin
+                    img.setPixel(x,y,qRgb(center,center,center)); // Shade of pixel in new image = center integer
+                }
+            }
     }
-    stbi_image_free(new_img);
 }
 
 #endif // FUNCTIONS_H

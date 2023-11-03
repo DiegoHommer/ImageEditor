@@ -23,10 +23,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(TrabalhoFPI
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-
         functions.h
-        stb_image.h
-        stb_image_write.h
         Gramado_72k.jpg Space_187k.jpg Underwater_53k.jpg
     )
 # Define target properties for Android with Qt 6 as:
