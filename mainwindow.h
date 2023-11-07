@@ -21,7 +21,7 @@ public:
 private slots:
     void on_ImportButton_clicked();
     void on_CopyButton_clicked();
-    void on_GrayOutButton_clicked();
+    void on_GreyOutButton_clicked();
     void on_VerticalFlipButton_clicked();
     void on_HorizontalFlipButton_clicked();
     void on_QuantizeButton_clicked();

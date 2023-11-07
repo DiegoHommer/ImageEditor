@@ -33,7 +33,7 @@
      <string>Horizontal</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="GrayOutButton">
+   <widget class="QPushButton" name="GreyOutButton">
     <property name="geometry">
      <rect>
       <x>760</x>
@@ -46,7 +46,7 @@
      <string notr="true">color: rgb(255, 255, 255);</string>
     </property>
     <property name="text">
-     <string>Gray Out</string>
+     <string>GreyScale</string>
     </property>
    </widget>
    <widget class="QPushButton" name="VerticalFlipButton">
