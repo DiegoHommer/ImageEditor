@@ -4,6 +4,8 @@
 #include <bits/stdc++.h>
 #include <iostream>
 #include <QImage>
+#include <QLabel>
+#include <QPainter>
 
 using namespace std;
 
@@ -116,4 +118,100 @@ void quantize(QImage &img, int num_shades)
     }
 }
 
+void linear_transformations(QImage &img, double scale, int option)
+{
+    for(int y = 0; y < img.height(); y++)
+    {
+            for(int x = 0; x < img.width(); x++)
+            {
+                // Gets the Rgb colors from original pixel
+                QColor new_color = img.pixelColor(x, y);
+
+                switch(option)
+                {
+                    // Adjust Brightness
+                    case 0:
+                        // Adjusts pixel value by adding the scale to each channel value of the pixel
+                        new_color.setRed(std::clamp((int)(new_color.red() + scale), 0, 255));
+                        new_color.setBlue(std::clamp((int)(new_color.blue() + scale), 0, 255));
+                        new_color.setGreen(std::clamp((int)(new_color.green() + scale), 0, 255));
+                        break;
+
+                    // Adjust Contrast
+                    case 1:
+                        // Adjusts pixel value by multiplying the scale with each channel value of the pixel
+                        new_color.setRed(std::clamp((int)(new_color.red() * scale), 0, 255));
+                        new_color.setBlue(std::clamp((int)(new_color.blue() * scale), 0, 255));
+                        new_color.setGreen(std::clamp((int)(new_color.green() * scale), 0, 255));
+                        break;
+
+                    // Image negative
+                    case 2:
+                        // Calculates the negative of the pixel by doing 255 - old_value
+                        new_color.setRed(std::clamp(255 - new_color.red(), 0, 255));
+                        new_color.setBlue(std::clamp(255 - new_color.blue(), 0, 255));
+                        new_color.setGreen(std::clamp(255 - new_color.green(), 0, 255));
+                        break;
+
+                }
+
+                // New pixel has it's brightness adjusted;
+                img.setPixelColor(x,y,new_color);
+            }
+    }
+}
+
+void generate_histogram(QImage &img, QLabel &hist_window)
+{
+    vector<int> histogram(256,0);
+    int total_pixels = img.width() * img.height();
+    float scaling_factor;
+
+    // Histogram computation
+    for(int y = 0; y < img.height(); y++)
+    {
+            for(int x = 0; x < img.width(); x++)
+            {
+                 // Gets the Rgb colors from original pixel
+                QColor color = img.pixelColor(x, y);
+
+                // Adds 1 to the corresponding shade collumn of the histogram
+                histogram[color.red()]++;
+            }
+    }
+
+    scaling_factor = 255.0 / *std::max_element(histogram.begin(), histogram.end());
+
+    // Histogram normalization
+    for(auto it = histogram.begin(); it != histogram.end(); it++)
+    {
+        // Multiplies each histogram column by scaling factor for visualization
+        *it = static_cast<int>(*it * scaling_factor);
+    }
+
+    // Declare the PixelMap that will serve as the "canvas"
+    QPixmap hist_map(260,260);
+    hist_map.fill(Qt::white);
+
+    QPainter painter(&hist_map);
+
+    // Painting normalized histogram columns for display
+    for(int i = 0; i < 256; i++)
+    {
+        int xPos = i;
+        int yPos = 260 - histogram[i];
+        int columnWidth = 1;
+        int columnHeight = histogram[i];
+
+        // Paints a column (top to bottom) starting from (xPos,yPos) with columnHeight black pixels
+        painter.fillRect(QRect(xPos, yPos, columnWidth, columnHeight), Qt::black);
+    }
+
+    // Setup window for display
+    hist_window.setWindowTitle("Edited Image Histogram");
+    hist_window.setPixmap(hist_map.scaled(hist_window.height(), hist_window.width(), Qt::KeepAspectRatio));
+    hist_window.show();
+
+
+}
 #endif // FUNCTIONS_H

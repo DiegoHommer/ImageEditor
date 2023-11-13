@@ -14,6 +14,16 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::updateEditedImageDisplay()
+{
+    int h = ui->Edited_Image->height();
+    int w = ui->Edited_Image->width();
+    new_image = QPixmap::fromImage(*new_imageObj);
+    ui->Edited_Image->setPixmap(new_image.scaled(h, w, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+}
+
+
+
 void MainWindow::on_ImportButton_clicked()
 {
     // Reading the path of the image to be opened
@@ -25,10 +35,17 @@ void MainWindow::on_ImportButton_clicked()
     if(imagePath != nullptr)
     {
         // Creates the QImages and QPixmaps of the edited and original image
-        original_imageObj = new QImage();
+        if(original_imageObj == nullptr)
+        {
+            original_imageObj = new QImage();
+        }
         original_imageObj->load(imagePath);
         original_image = QPixmap::fromImage(*original_imageObj);
-        new_imageObj = new QImage(original_imageObj->copy());
+
+        if(new_imageObj == nullptr)
+        {
+            new_imageObj = new QImage(original_imageObj->copy());
+        }
         new_image = QPixmap::fromImage(*new_imageObj);
 
         int h = ui->Original_Image->height();
@@ -36,7 +53,7 @@ void MainWindow::on_ImportButton_clicked()
 
         // Displays the images on the application preserving the aspect ratio
         ui->Original_Image->setPixmap(original_image.scaled(h, w, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-        ui->Edited_Image->setPixmap(original_image.scaled(h, w, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        ui->Edited_Image->setPixmap(new_image.scaled(h, w, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     }else
     {
         qWarning() << "Non existent image path";
@@ -66,12 +83,8 @@ void MainWindow::on_GreyOutButton_clicked()
 {
     if(new_imageObj != nullptr)
     {
-        int h = ui->Edited_Image->height();
-        int w = ui->Edited_Image->width();
-
         generate_grey_img(*new_imageObj);
-        new_image = QPixmap::fromImage(*new_imageObj);
-        ui->Edited_Image->setPixmap(new_image.scaled(h, w, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        updateEditedImageDisplay();
     }else
     {
         qWarning() << "No image to gray out!";
@@ -83,12 +96,8 @@ void MainWindow::on_VerticalFlipButton_clicked()
 {
     if(new_imageObj != nullptr)
     {
-        int h = ui->Edited_Image->height();
-        int w = ui->Edited_Image->width();
-
         mirror(*new_imageObj, 0);
-        new_image = QPixmap::fromImage(*new_imageObj);
-        ui->Edited_Image->setPixmap(new_image.scaled(h, w, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        updateEditedImageDisplay();
     }else
     {
         qWarning() << "No image to mirror!";
@@ -100,12 +109,8 @@ void MainWindow::on_HorizontalFlipButton_clicked()
 {
     if(new_imageObj != nullptr)
     {
-        int h = ui->Edited_Image->height();
-        int w = ui->Edited_Image->width();
-
         mirror(*new_imageObj, 1);
-        new_image = QPixmap::fromImage(*new_imageObj);
-        ui->Edited_Image->setPixmap(new_image.scaled(h, w, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        updateEditedImageDisplay();
     }else
     {
         qWarning() << "No image to mirror!";
@@ -117,18 +122,60 @@ void MainWindow::on_QuantizeButton_clicked()
 {
     if(new_imageObj != nullptr)
     {
-        int h = ui->Edited_Image->height();
-        int w = ui->Edited_Image->width();
-
         quantize(*new_imageObj, ui->spinBox->value());
-        new_image = QPixmap::fromImage(*new_imageObj);
-        ui->Edited_Image->setPixmap(new_image.scaled(h, w, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        updateEditedImageDisplay();
     }else
     {
         qWarning() << "No image to quantize!";
     }
 }
 
+void MainWindow::on_MakeHistogram_clicked()
+{
+    if(new_imageObj != nullptr)
+    {
+        generate_histogram(*new_imageObj, *histogram_window);
+    }else
+    {
+        qWarning() << "No image to adjust!";
+    }
+}
+
+void MainWindow::on_BrightnessButton_clicked()
+{
+    if(new_imageObj != nullptr)
+    {
+        linear_transformations(*new_imageObj, ui->doubleSpinBox->value(), 0);
+        updateEditedImageDisplay();
+    }else
+    {
+        qWarning() << "No image to adjust!";
+    }
+}
+
+void MainWindow::on_ContrastButton_clicked()
+{
+    if(new_imageObj != nullptr)
+    {
+        linear_transformations(*new_imageObj, ui->doubleSpinBox_2->value(), 1);
+        updateEditedImageDisplay();
+    }else
+    {
+        qWarning() << "No image to adjust!";
+    }
+}
+
+void MainWindow::on_NegativeButton_clicked()
+{
+    if(new_imageObj != nullptr)
+    {
+        linear_transformations(*new_imageObj, 0, 2);
+        updateEditedImageDisplay();
+    }else
+    {
+        qWarning() << "No image to adjust!";
+    }
+}
 
 void MainWindow::on_SaveButton_clicked()
 {
@@ -144,4 +191,3 @@ void MainWindow::on_SaveButton_clicked()
         qWarning() << "There is no edited image to save!";
     }
 }
-

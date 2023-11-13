@@ -5,6 +5,9 @@
 #include <QFileDialog>
 #include <QDebug>
 #include <QLabel>
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QGraphicsRectItem>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -19,6 +22,7 @@ public:
     ~MainWindow();
 
 private slots:
+    void updateEditedImageDisplay();
     void on_ImportButton_clicked();
     void on_CopyButton_clicked();
     void on_GreyOutButton_clicked();
@@ -27,13 +31,20 @@ private slots:
     void on_QuantizeButton_clicked();
     void on_SaveButton_clicked();
 
+    void on_BrightnessButton_clicked();
+
+    void on_ContrastButton_clicked();
+
+    void on_NegativeButton_clicked();
+
+    void on_MakeHistogram_clicked();
+
 private:
     Ui::MainWindow *ui;
     QPixmap original_image;
     QImage  *original_imageObj = nullptr;
     QPixmap new_image;
     QImage *new_imageObj = nullptr;
-    QLabel *original_imageWindow = nullptr;
-    QLabel *new_imageWindow = nullptr;
+    QLabel *histogram_window = new QLabel();
 };
 #endif // MAINWINDOW_H
