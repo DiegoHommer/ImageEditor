@@ -45,6 +45,8 @@ private:
     QImage  *original_imageObj = nullptr;
     QPixmap new_image;
     QImage *new_imageObj = nullptr;
+    QLabel *originalImage_window = new QLabel();
+    QLabel *newImage_window = new QLabel();
     QLabel *histogram_window = new QLabel();
 };
 #endif // MAINWINDOW_H

@@ -16,10 +16,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::updateEditedImageDisplay()
 {
-    int h = ui->Edited_Image->height();
-    int w = ui->Edited_Image->width();
     new_image = QPixmap::fromImage(*new_imageObj);
-    ui->Edited_Image->setPixmap(new_image.scaled(h, w, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    newImage_window->setPixmap(new_image);
+    newImage_window->adjustSize();
 }
 
 
@@ -38,22 +37,24 @@ void MainWindow::on_ImportButton_clicked()
         if(original_imageObj == nullptr)
         {
             original_imageObj = new QImage();
+            originalImage_window->setWindowTitle("Original Image");
         }
         original_imageObj->load(imagePath);
         original_image = QPixmap::fromImage(*original_imageObj);
 
-        if(new_imageObj == nullptr)
+        if(new_imageObj == nullptr || newImage_window->isHidden())
         {
             new_imageObj = new QImage(original_imageObj->copy());
+            newImage_window->setWindowTitle("Edited Image");
+            newImage_window->setPixmap(original_image);
         }
         new_image = QPixmap::fromImage(*new_imageObj);
 
-        int h = ui->Original_Image->height();
-        int w = ui->Original_Image->width();
-
         // Displays the images on the application preserving the aspect ratio
-        ui->Original_Image->setPixmap(original_image.scaled(h, w, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-        ui->Edited_Image->setPixmap(new_image.scaled(h, w, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        originalImage_window->setPixmap(original_image);
+        originalImage_window->adjustSize();
+        originalImage_window->show();
+        newImage_window->show();
     }else
     {
         qWarning() << "Non existent image path";
@@ -69,12 +70,8 @@ void MainWindow::on_CopyButton_clicked()
             delete new_imageObj; // Deallocate the existing QImage
         }
 
-        int h = ui->Edited_Image->height();
-        int w = ui->Edited_Image->width();
-
         new_imageObj = new QImage(original_imageObj->copy()); // Create a new copy
-        new_image = QPixmap::fromImage(*new_imageObj);
-        ui->Edited_Image->setPixmap(new_image.scaled(h, w, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        updateEditedImageDisplay();
     }
 }
 
