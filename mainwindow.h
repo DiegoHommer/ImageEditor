@@ -30,14 +30,16 @@ private slots:
     void on_HorizontalFlipButton_clicked();
     void on_QuantizeButton_clicked();
     void on_SaveButton_clicked();
-
     void on_BrightnessButton_clicked();
-
     void on_ContrastButton_clicked();
-
     void on_NegativeButton_clicked();
-
     void on_MakeHistogram_clicked();
+
+    void on_ZoomInButton_clicked();
+
+    void on_ZoomOutButton_clicked();
+
+    void on_RotateButton_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -48,5 +50,6 @@ private:
     QLabel *originalImage_window = new QLabel();
     QLabel *newImage_window = new QLabel();
     QLabel *histogram_window = new QLabel();
+    bool isGreyScale = false;
 };
 #endif // MAINWINDOW_H

@@ -18,10 +18,9 @@ void MainWindow::updateEditedImageDisplay()
 {
     new_image = QPixmap::fromImage(*new_imageObj);
     newImage_window->setPixmap(new_image);
-    newImage_window->adjustSize();
+    newImage_window->setFixedSize(new_image.width(), new_image.height());
+    check_greyscale(*new_imageObj, &isGreyScale);
 }
-
-
 
 void MainWindow::on_ImportButton_clicked()
 {
@@ -41,6 +40,7 @@ void MainWindow::on_ImportButton_clicked()
         }
         original_imageObj->load(imagePath);
         original_image = QPixmap::fromImage(*original_imageObj);
+        check_greyscale(*original_imageObj, &isGreyScale);
 
         if(new_imageObj == nullptr || newImage_window->isHidden())
         {
@@ -54,6 +54,7 @@ void MainWindow::on_ImportButton_clicked()
         originalImage_window->setPixmap(original_image);
         originalImage_window->adjustSize();
         originalImage_window->show();
+        newImage_window->setFixedSize(new_image.width(), new_image.height());
         newImage_window->show();
     }else
     {
@@ -66,12 +67,9 @@ void MainWindow::on_CopyButton_clicked()
 {
     if(original_imageObj != nullptr)
     {
-        if (new_imageObj) {
-            delete new_imageObj; // Deallocate the existing QImage
-        }
-
-        new_imageObj = new QImage(original_imageObj->copy()); // Create a new copy
+        *new_imageObj = original_imageObj->copy(); // Create a new copy
         updateEditedImageDisplay();
+        newImage_window->show();
     }
 }
 
@@ -131,7 +129,7 @@ void MainWindow::on_MakeHistogram_clicked()
 {
     if(new_imageObj != nullptr)
     {
-        generate_histogram(*new_imageObj, *histogram_window);
+        generate_histogram(*new_imageObj, *histogram_window, "Edited Image Histogram");
     }else
     {
         qWarning() << "No image to adjust!";
@@ -171,6 +169,42 @@ void MainWindow::on_NegativeButton_clicked()
     }else
     {
         qWarning() << "No image to adjust!";
+    }
+}
+
+void MainWindow::on_ZoomInButton_clicked()
+{
+    if(new_imageObj != nullptr)
+    {
+        zoomIn(*new_imageObj);
+        updateEditedImageDisplay();
+    }else
+    {
+        qWarning() << "No image to zoom in!";
+    }
+}
+
+void MainWindow::on_ZoomOutButton_clicked()
+{
+    if(new_imageObj != nullptr)
+    {
+        zoomOut(*new_imageObj, ui->X_factor->value(), ui->Y_factor->value());
+        updateEditedImageDisplay();
+    }else
+    {
+        qWarning() << "No image to zoom out!";
+    }
+}
+
+void MainWindow::on_RotateButton_clicked()
+{
+    if(new_imageObj != nullptr)
+    {
+        rotate(*new_imageObj, ui->Clockwise->isChecked());
+        updateEditedImageDisplay();
+    }else
+    {
+        qWarning() << "No image to rotate!";
     }
 }
 
