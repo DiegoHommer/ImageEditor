@@ -211,7 +211,6 @@ void display_histogram(vector<int> histogram, QLabel &hist_window, QString windo
 void generate_histogram(QImage &img, QLabel &hist_window, QString window_name)
 {
     vector<int> histogram(256,0);
-    int total_pixels = img.width() * img.height();
     float scaling_factor;
 
     // Histogram computation
@@ -262,7 +261,9 @@ QColor average_color(QImage &img, int x_start, int y_start, int x_end, int y_end
     average_red = static_cast<int>(average_red / num_pixels);
     average_blue = static_cast<int>(average_blue / num_pixels);
     average_green = static_cast<int>(average_green / num_pixels);
-    return QColor(average_red, average_green, average_blue);
+    QColor new_pixel_color;
+    new_pixel_color.setRgb(average_red, average_green, average_blue);
+    return new_pixel_color;
 }
 
 void zoomOut(QImage &img, int Sx, int Sy)
@@ -271,7 +272,7 @@ void zoomOut(QImage &img, int Sx, int Sy)
     int newWidth = static_cast<int>(floor(img.width() / Sx));
     int num_pixels = Sx * Sy;
 
-    QImage zoomedImage(newWidth, newHeight, QImage::Format_ARGB32);
+    QImage zoomedImage(newWidth, newHeight, img.format());
 
     for(int y = 0; y < newHeight; y++)
     {
@@ -308,7 +309,7 @@ void zoomIn(QImage &img)
     int newHeight = (img.height() * 2);
     int newWidth = (img.width() * 2);
 
-    QImage zoomedImage(newWidth, newHeight, QImage::Format_ARGB32);
+    QImage zoomedImage(newWidth, newHeight, img.format());
 
     /*
         Loop for initizaling columns/rows (leaving empty columns/rows between each one)
@@ -360,7 +361,7 @@ void zoomIn(QImage &img)
 void rotate(QImage &img, bool clockwise)
 {
     // Image with inverse height and width dimensions (when compared to original)
-    QImage rotatedImage(img.height(), img.width(), QImage::Format_ARGB32);
+    QImage rotatedImage(img.height(), img.width(), img.format());
 
     if(clockwise)
     {
@@ -384,6 +385,62 @@ void rotate(QImage &img, bool clockwise)
 
     // Update the original image in place
     img = rotatedImage;
+}
+
+QColor convolve_pixel(QImage &img, int x_start, int y_start, int x_end, int y_end, vector<double> kernel, bool embossing)
+{
+    int kernel_red = 0;
+    int kernel_green = 0;
+    int kernel_blue = 0;
+    int kernel_index = 0;
+
+    for(int y = y_start; y < y_end; y++)
+    {
+        for(int x = x_start; x < x_end; x++)
+        {
+            QColor color = img.pixelColor(x, y);
+            kernel_red += kernel[kernel_index] * color.red();
+            kernel_green += kernel[kernel_index] * color.green();
+            kernel_blue += kernel[kernel_index] * color.blue();
+            kernel_index++;
+        }
+    }
+    if(embossing)
+    {
+        kernel_red += 127;
+        kernel_green += 127;
+        kernel_blue += 127;
+    }
+    kernel_red = std::clamp(static_cast<int>(kernel_red), 0, 255);
+    kernel_green = std::clamp(static_cast<int>(kernel_green), 0, 255);
+    kernel_blue = std::clamp(static_cast<int>(kernel_blue), 0, 255);
+
+    return QColor(kernel_red ,  kernel_green,  kernel_blue);
+}
+
+void convolve(QImage &img, vector<double> kernel, bool embossing)
+{
+    int height = img.height();
+    int width = img.width();
+    QImage outputImage(width, height, img.format());
+
+    for(int y = 1; y < height - 1; y++)
+    {
+        for(int x = 1; x < width - 1; x++)
+        {
+            int x_start = x - 1;
+            int y_start = y - 1;
+            int x_end = x + 2;
+            int y_end = y + 2;
+
+
+            QColor color = convolve_pixel(img, x_start, y_start, x_end, y_end, kernel, embossing);
+            outputImage.setPixelColor(x, y, color);
+        }
+    }
+
+    // Update the original image in place
+    img = outputImage;
 }
 
 #endif // FUNCTIONS_H

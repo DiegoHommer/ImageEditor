@@ -41,6 +41,8 @@ private slots:
 
     void on_RotateButton_clicked();
 
+    void on_ColvolveButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     QPixmap original_image;

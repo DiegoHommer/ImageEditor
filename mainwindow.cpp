@@ -208,6 +208,19 @@ void MainWindow::on_RotateButton_clicked()
     }
 }
 
+void MainWindow::on_ColvolveButton_clicked()
+{
+    if(new_imageObj != nullptr)
+    {
+        vector<double> kernel = {ui->Kernel9->value(), ui->Kernel6->value(), ui->Kernel3->value(),
+                                 ui->Kernel8->value(), ui->Kernel5->value(), ui->Kernel2->value(),
+                                 ui->Kernel7->value(), ui->Kernel4->value(), ui->Kernel1->value()};
+
+        convolve(*new_imageObj, kernel, ui->Embossing->isChecked());
+        updateEditedImageDisplay();
+    }
+}
+
 void MainWindow::on_SaveButton_clicked()
 {
     if(new_imageObj != nullptr)
@@ -222,3 +235,4 @@ void MainWindow::on_SaveButton_clicked()
         qWarning() << "There is no edited image to save!";
     }
 }
+
