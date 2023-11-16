@@ -6,6 +6,7 @@
 #include <QImage>
 #include <QLabel>
 #include <QPainter>
+#include <QMessageBox>
 
 using namespace std;
 
@@ -27,7 +28,7 @@ void generate_grey_img(QImage &img)
     }
 }
 
-void check_greyscale(QImage &img, bool *isGrey)
+bool check_greyscale(QImage &img)
 {
     for(int y = 0; y < img.height(); y++)
     {
@@ -40,13 +41,11 @@ void check_greyscale(QImage &img, bool *isGrey)
                 || (color.blue() != color.green())
                 || (color.red() != color.green()))
             {
-                *isGrey = false;
-                return;
+                return false;
             }
         }
     }
-    *isGrey = true;
-    return;
+    return true;
 }
 
 void mirror(QImage &img, bool option)
@@ -184,8 +183,17 @@ void linear_transformations(QImage &img, double scale, int option)
 
 void display_histogram(vector<int> histogram, QLabel &hist_window, QString window_name)
 {
+    float scaling_factor = 255.0 / *std::max_element(histogram.begin(), histogram.end());
+
+    // Histogram normalization
+    for(auto it = histogram.begin(); it != histogram.end(); it++)
+    {
+            // Multiplies each histogram column by scaling factor for visualization
+            *it = static_cast<int>(*it * scaling_factor);
+    }
+
     // Declare the PixelMap that will serve as the "canvas"
-    QPixmap hist_map(260,260);
+    QPixmap hist_map(256, 256);
     hist_map.fill(Qt::white);
 
     QPainter painter(&hist_map);
@@ -208,11 +216,8 @@ void display_histogram(vector<int> histogram, QLabel &hist_window, QString windo
     hist_window.show();
 }
 
-void generate_histogram(QImage &img, QLabel &hist_window, QString window_name)
+void generate_histogram(QImage &img, vector<int>& histogram)
 {
-    vector<int> histogram(256,0);
-    float scaling_factor;
-
     // Histogram computation
     for(int y = 0; y < img.height(); y++)
     {
@@ -225,21 +230,65 @@ void generate_histogram(QImage &img, QLabel &hist_window, QString window_name)
                 histogram[color.red()]++;
             }
     }
-
-    scaling_factor = 255.0 / *std::max_element(histogram.begin(), histogram.end());
-
-    // Histogram normalization
-    for(auto it = histogram.begin(); it != histogram.end(); it++)
-    {
-        // Multiplies each histogram column by scaling factor for visualization
-        *it = static_cast<int>(*it * scaling_factor);
-    }
-
-    display_histogram(histogram, hist_window, window_name);
 }
 
-void equalize_histogram(QImage &img, QLabel &hist_window, bool isGrey)
+void equalize_histogram(QImage &img, QLabel &hist_window_before, QLabel &hist_window_after, bool isGrey)
 {
+    vector<int> original_histogram(256,0);
+    vector<int> equalized_histogram(256,0);
+    vector<int> cumulative_histogram(256,0);
+    float scaling_factor = 255.0 / (img.width() * img.height());
+
+
+    if(!isGrey)
+    {
+        // If image is colored compute the histogram from the luminance (greyscale) version of the image
+        QImage grey_img = img.copy();
+        generate_grey_img(grey_img);
+        generate_histogram(grey_img, original_histogram);
+    }else
+    {
+        // If the image is greyscale, compute the histogram normally from the input image
+        generate_histogram(img, original_histogram);
+    }
+
+    // Compute the cumulative histogram (using static_cast to avoid precision errors)
+    cumulative_histogram[0] = static_cast<double>(original_histogram[0]);
+    for (int i = 1; i < 256; i++)
+    {
+        cumulative_histogram[i] = cumulative_histogram[i - 1] + static_cast<double>(original_histogram[i]);
+    }
+
+    for(int y = 0; y < img.height(); y++)
+    {
+        for(int x = 0; x < img.width(); x++)
+        {
+                // Get the original pixel shade
+                QColor color = img.pixelColor(x,y);
+
+                // Map pixel values based on the normalized cumulative histogram (multiplying with scaling_factor to normalize)
+                int red = static_cast<int>(cumulative_histogram[color.red()] * scaling_factor);
+                int green = static_cast<int>(cumulative_histogram[color.green()] * scaling_factor);
+                int blue = static_cast<int>(cumulative_histogram[color.blue()] * scaling_factor);
+
+                // Ensure that mapped values are in the valid range [0, 255]
+                red = std::clamp(red, 0, 255);
+                green = std::clamp(green, 0, 255);
+                blue = std::clamp(blue, 0, 255);
+
+                // Set the equalized pixel color on the image
+                img.setPixelColor(x,y,QColor(red,green,blue));
+        }
+    }
+
+
+    if(isGrey)
+    {
+        // If the input image is greyscale, display the histogram of the image before and after the equalization
+        generate_histogram(img,equalized_histogram);
+        display_histogram(original_histogram, hist_window_before, "Histogram before equalization");
+        display_histogram(equalized_histogram, hist_window_after, "Histogram after equalization");
+    }
 }
 
 QColor average_color(QImage &img, int x_start, int y_start, int x_end, int y_end, int num_pixels)
@@ -248,6 +297,13 @@ QColor average_color(QImage &img, int x_start, int y_start, int x_end, int y_end
     int average_blue = 0;
     int average_green = 0;
 
+    // Rectangle:
+    //  (x_start, y_start) ... (x_end, y_start)
+    //          .                     .
+    //          .                     .
+    //  (x_start, y_end)  ... (x_end, y_end)
+
+    // Loop calculates the sum of intensities (each channel) from pixels inside the rectangle
     for(int y = y_start; y < y_end; y++)
     {
         for(int x = x_start; x < x_end; x++)
@@ -258,6 +314,7 @@ QColor average_color(QImage &img, int x_start, int y_start, int x_end, int y_end
             average_green += color.green();
         }
     }
+
     average_red = static_cast<int>(average_red / num_pixels);
     average_blue = static_cast<int>(average_blue / num_pixels);
     average_green = static_cast<int>(average_green / num_pixels);
@@ -278,7 +335,7 @@ void zoomOut(QImage &img, int Sx, int Sy)
     {
         for(int x = 0; x < newWidth; x++)
         {
-            // Fill up the zoomed image pixels with
+            // Determines the coordinates (position) of where the factor rectangle will be applied
             int x_start = x * Sx;
             int y_start = y * Sy;
             int x_end = std::min(x_start + Sx, img.width());
@@ -296,6 +353,7 @@ void zoomOut(QImage &img, int Sx, int Sy)
 
 QColor linear_interpolation(QColor pix1, QColor pix2)
 {
+    // Calculate the interpolation of two pixels (average between pixel intensity on each channel)
     QColor interpol_pix;
     interpol_pix.setRed(static_cast<int>((pix1.red() + pix2.red()) / 2));
     interpol_pix.setBlue(static_cast<int>((pix1.blue() + pix2.blue()) / 2));
@@ -369,6 +427,7 @@ void rotate(QImage &img, bool clockwise)
         {
             for(int x = 0; x < img.width(); x++)
             {
+                // First row (left to right) goes to last column (top to bottom) and so on...
                 rotatedImage.setPixel(img.height() - y - 1, x, img.pixel(x,y));
             }
         }
@@ -378,6 +437,7 @@ void rotate(QImage &img, bool clockwise)
         {
             for(int x = 0; x < img.width(); x++)
             {
+                // First row (left to right) goes to first column (bottom to top) and so on...
                 rotatedImage.setPixel(y, img.width() - x - 1, img.pixel(x,y));
             }
         }
@@ -394,6 +454,7 @@ QColor convolve_pixel(QImage &img, int x_start, int y_start, int x_end, int y_en
     int kernel_blue = 0;
     int kernel_index = 0;
 
+    // Loop for multyplying each pixel (inside the dimensions) intensity  with it's respective kernel value
     for(int y = y_start; y < y_end; y++)
     {
         for(int x = x_start; x < x_end; x++)
@@ -405,6 +466,8 @@ QColor convolve_pixel(QImage &img, int x_start, int y_start, int x_end, int y_en
             kernel_index++;
         }
     }
+
+    // If embossing (greybackground) was enabled, add 127 before clamping the concolved pixel value
     if(embossing)
     {
         kernel_red += 127;
@@ -428,12 +491,13 @@ void convolve(QImage &img, vector<double> kernel, bool embossing)
     {
         for(int x = 1; x < width - 1; x++)
         {
+            // Determine the coordinates (location) of the 3x3 rectangle where the kernel will be applied
             int x_start = x - 1;
             int y_start = y - 1;
             int x_end = x + 2;
             int y_end = y + 2;
 
-
+            // Calculate the concolved pixel and position it on output image
             QColor color = convolve_pixel(img, x_start, y_start, x_end, y_end, kernel, embossing);
             outputImage.setPixelColor(x, y, color);
         }
@@ -441,6 +505,74 @@ void convolve(QImage &img, vector<double> kernel, bool embossing)
 
     // Update the original image in place
     img = outputImage;
+}
+
+void histogram_matching(QImage &img_src, QImage &img_target, QLabel &hist_window_before, QLabel &hist_window_after)
+{
+    vector<int> src_histogram(256,0);
+    vector<int> target_histogram(256,0);
+    vector<int> src_cumulative_histogram(256,0);
+    vector<int> target_cumulative_histogram(256,0);
+    vector<int> HM(256,0);
+    float scaling_factor_src = 255.0 / (img_src.width() * img_src.height());
+    float scaling_factor_target = 255.0 / (img_target.width() * img_target.height());
+
+    // Compute source and target histograms
+    generate_histogram(img_src, src_histogram);
+    generate_histogram(img_target, target_histogram);
+
+    // Compute source and target cumulative histograms
+    src_cumulative_histogram[0] = static_cast<double>(src_histogram[0]);
+    target_cumulative_histogram[0] =  static_cast<double>(target_histogram[0]);
+    for(int i = 1; i < 256; i++)
+    {
+        src_cumulative_histogram[i] = src_cumulative_histogram[i - 1] + static_cast<double>(src_histogram[i]);
+        target_cumulative_histogram[i] = target_cumulative_histogram[i - 1] + static_cast<double>(target_histogram[i]);
+    }
+
+    // Normalize source and target cumulative histograms (apart from original loop to avoid precision erros)
+    for(int i = 0; i < 256; i++)
+    {
+        src_cumulative_histogram[i] = static_cast<int>(src_cumulative_histogram[i] * scaling_factor_src);
+        target_cumulative_histogram[i] = static_cast<int>(target_cumulative_histogram[i] * scaling_factor_target);
+    }
+
+    // Compute Matching Histogram (HM)
+    for(int shade_level = 0; shade_level < 256; shade_level++)
+    {
+        int src_cumulative = src_cumulative_histogram[shade_level] ;
+        int closest_target_shade = 0;
+        int min_difference = INT_MAX;
+
+        // Loop for looking for the closest target shade (relative to src_cumulative) in the target cumulative histogram
+        for(int i = 0; i < 256; i++)
+        {
+            if(std::abs(target_cumulative_histogram[i] - src_cumulative) < min_difference)
+            {
+                min_difference = std::abs(target_cumulative_histogram[i] - src_cumulative);
+                closest_target_shade = i;
+            }
+        }
+        HM[shade_level] = closest_target_shade;
+    }
+
+    for(int y = 0; y < img_src.height(); y++)
+    {
+        for(int x = 0; x < img_src.width(); x++)
+        {
+            // Get the original pixel shade
+            QColor color = img_src.pixelColor(x,y);
+
+            // Map the original shade to the matching histogram shade
+            int mapped_shade = HM[color.red()];
+
+            // Set the matched pixel color on the image
+            img_src.setPixelColor(x,y,QColor(mapped_shade, mapped_shade, mapped_shade));
+        }
+    }
+
+    display_histogram(src_cumulative_histogram, hist_window_before, "Source Normalized Cumulative Histogram");
+    display_histogram(target_cumulative_histogram, hist_window_after, "Target Normalized Cumulative Histogram");
 }
 
 #endif // FUNCTIONS_H

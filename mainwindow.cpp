@@ -19,7 +19,7 @@ void MainWindow::updateEditedImageDisplay()
     new_image = QPixmap::fromImage(*new_imageObj);
     newImage_window->setPixmap(new_image);
     newImage_window->setFixedSize(new_image.width(), new_image.height());
-    check_greyscale(*new_imageObj, &isGreyScale);
+    isGreyScale = check_greyscale(*new_imageObj);
 }
 
 void MainWindow::on_ImportButton_clicked()
@@ -40,7 +40,7 @@ void MainWindow::on_ImportButton_clicked()
         }
         original_imageObj->load(imagePath);
         original_image = QPixmap::fromImage(*original_imageObj);
-        check_greyscale(*original_imageObj, &isGreyScale);
+        isGreyScale = check_greyscale(*original_imageObj);
 
         if(new_imageObj == nullptr || newImage_window->isHidden())
         {
@@ -129,10 +129,12 @@ void MainWindow::on_MakeHistogram_clicked()
 {
     if(new_imageObj != nullptr)
     {
-        generate_histogram(*new_imageObj, *histogram_window, "Edited Image Histogram");
+        vector<int> histogram(256,0);
+        generate_histogram(*new_imageObj, histogram);
+        display_histogram(histogram, *histogram_window, "Edited Image Histogram");
     }else
     {
-        qWarning() << "No image to adjust!";
+        qWarning() << "No image to make histogram with!";
     }
 }
 
@@ -172,6 +174,55 @@ void MainWindow::on_NegativeButton_clicked()
     }
 }
 
+
+void MainWindow::on_EqualizeButton_clicked()
+{
+    if(new_imageObj != nullptr)
+    {
+        // Display a window with the image before it is equalized
+        newImageBeforeMatching_window->setPixmap(new_image);
+        newImageBeforeMatching_window->setWindowTitle("Edited Image before matching");
+        newImageBeforeMatching_window->setFixedSize(new_image.width(), new_image.height());
+        newImageBeforeMatching_window->show();
+
+        equalize_histogram(*new_imageObj, *histogram_before_window, *histogram_window, isGreyScale);
+        updateEditedImageDisplay();
+    }else
+    {
+        qWarning() << "No image to equalize!";
+    }
+}
+
+void MainWindow::on_MatchButton_clicked()
+{
+    if(new_imageObj != nullptr)
+    {
+        QMessageBox::information(this, "Matching", "Choose a greyscale target image for the matching");
+
+        // Reading the path of the target image to be opened
+        QString imagePath = QFileDialog::getOpenFileName(this, tr("Open File"),
+                                                         "C:/",
+                                                         tr("Images (*.png *.xpm *.jpg)"));
+
+        // If the path exists
+        if(imagePath != nullptr)
+        {
+            QImage *target_imageObj = new QImage();
+            target_imageObj->load(imagePath);
+
+            // If both target and source images are greyscale
+            if(check_greyscale(*target_imageObj) && isGreyScale)
+            {
+                histogram_matching(*new_imageObj, *target_imageObj, *histogram_before_window, *histogram_window);
+                updateEditedImageDisplay();
+            }else
+            {
+                qWarning() << "One of the images is not in greyscale";
+            }
+        }
+    }
+}
+
 void MainWindow::on_ZoomInButton_clicked()
 {
     if(new_imageObj != nullptr)
@@ -208,10 +259,11 @@ void MainWindow::on_RotateButton_clicked()
     }
 }
 
-void MainWindow::on_ColvolveButton_clicked()
+void MainWindow::on_ConvolveButton_clicked()
 {
     if(new_imageObj != nullptr)
     {
+        // Set the kernel to be the 180º rotated version of the input kernel (so it can be used directly on convolution)
         vector<double> kernel = {ui->Kernel9->value(), ui->Kernel6->value(), ui->Kernel3->value(),
                                  ui->Kernel8->value(), ui->Kernel5->value(), ui->Kernel2->value(),
                                  ui->Kernel7->value(), ui->Kernel4->value(), ui->Kernel1->value()};
@@ -235,4 +287,3 @@ void MainWindow::on_SaveButton_clicked()
         qWarning() << "There is no edited image to save!";
     }
 }
-

@@ -41,7 +41,10 @@ private slots:
 
     void on_RotateButton_clicked();
 
-    void on_ColvolveButton_clicked();
+    void on_ConvolveButton_clicked();
+    void on_EqualizeButton_clicked();
+
+    void on_MatchButton_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -51,6 +54,8 @@ private:
     QImage *new_imageObj = nullptr;
     QLabel *originalImage_window = new QLabel();
     QLabel *newImage_window = new QLabel();
+    QLabel *newImageBeforeMatching_window = new QLabel();
+    QLabel *histogram_before_window = new QLabel();
     QLabel *histogram_window = new QLabel();
     bool isGreyScale = false;
 };
