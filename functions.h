@@ -193,7 +193,7 @@ void display_histogram(vector<int> histogram, QLabel &hist_window, QString windo
     }
 
     // Declare the PixelMap that will serve as the "canvas"
-    QPixmap hist_map(256, 256);
+    QPixmap hist_map(255, 255);
     hist_map.fill(Qt::white);
 
     QPainter painter(&hist_map);
@@ -216,15 +216,21 @@ void display_histogram(vector<int> histogram, QLabel &hist_window, QString windo
     hist_window.show();
 }
 
-void generate_histogram(QImage &img, vector<int>& histogram)
+void generate_histogram(QImage &img, vector<int>& histogram, bool isGrey)
 {
-    // Histogram computation
-    for(int y = 0; y < img.height(); y++)
+    QImage copyImage = img;
+    if(!isGrey)
     {
-            for(int x = 0; x < img.width(); x++)
+        generate_grey_img(copyImage);
+    }
+
+    // Histogram computation
+    for(int y = 0; y < copyImage.height(); y++)
+    {
+            for(int x = 0; x < copyImage.width(); x++)
             {
                  // Gets the Rgb colors from original pixel
-                QColor color = img.pixelColor(x, y);
+                QColor color = copyImage.pixelColor(x, y);
 
                 // Adds 1 to the corresponding shade collumn of the histogram
                 histogram[color.red()]++;
@@ -239,18 +245,7 @@ void equalize_histogram(QImage &img, QLabel &hist_window_before, QLabel &hist_wi
     vector<int> cumulative_histogram(256,0);
     float scaling_factor = 255.0 / (img.width() * img.height());
 
-
-    if(!isGrey)
-    {
-        // If image is colored compute the histogram from the luminance (greyscale) version of the image
-        QImage grey_img = img.copy();
-        generate_grey_img(grey_img);
-        generate_histogram(grey_img, original_histogram);
-    }else
-    {
-        // If the image is greyscale, compute the histogram normally from the input image
-        generate_histogram(img, original_histogram);
-    }
+    generate_histogram(img, original_histogram, isGrey);
 
     // Compute the cumulative histogram (using static_cast to avoid precision errors)
     cumulative_histogram[0] = static_cast<double>(original_histogram[0]);
@@ -285,7 +280,7 @@ void equalize_histogram(QImage &img, QLabel &hist_window_before, QLabel &hist_wi
     if(isGrey)
     {
         // If the input image is greyscale, display the histogram of the image before and after the equalization
-        generate_histogram(img,equalized_histogram);
+        generate_histogram(img,equalized_histogram,true);
         display_histogram(original_histogram, hist_window_before, "Histogram before equalization");
         display_histogram(equalized_histogram, hist_window_after, "Histogram after equalization");
     }
@@ -518,8 +513,8 @@ void histogram_matching(QImage &img_src, QImage &img_target, QLabel &hist_window
     float scaling_factor_target = 255.0 / (img_target.width() * img_target.height());
 
     // Compute source and target histograms
-    generate_histogram(img_src, src_histogram);
-    generate_histogram(img_target, target_histogram);
+    generate_histogram(img_src, src_histogram, true);
+    generate_histogram(img_target, target_histogram, true);
 
     // Compute source and target cumulative histograms
     src_cumulative_histogram[0] = static_cast<double>(src_histogram[0]);

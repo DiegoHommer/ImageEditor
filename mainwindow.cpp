@@ -130,7 +130,7 @@ void MainWindow::on_MakeHistogram_clicked()
     if(new_imageObj != nullptr)
     {
         vector<int> histogram(256,0);
-        generate_histogram(*new_imageObj, histogram);
+        generate_histogram(*new_imageObj, histogram, isGreyScale);
         display_histogram(histogram, *histogram_window, "Edited Image Histogram");
     }else
     {
@@ -181,7 +181,7 @@ void MainWindow::on_EqualizeButton_clicked()
     {
         // Display a window with the image before it is equalized
         newImageBeforeMatching_window->setPixmap(new_image);
-        newImageBeforeMatching_window->setWindowTitle("Edited Image before matching");
+        newImageBeforeMatching_window->setWindowTitle("Edited Image before equalizing");
         newImageBeforeMatching_window->setFixedSize(new_image.width(), new_image.height());
         newImageBeforeMatching_window->show();
 
