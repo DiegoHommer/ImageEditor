@@ -46,6 +46,8 @@ private slots:
 
     void on_MatchButton_clicked();
 
+    void on_comboBox_currentIndexChanged(int index);
+
 private:
     Ui::MainWindow *ui;
     QPixmap original_image;

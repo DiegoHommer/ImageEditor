@@ -360,6 +360,59 @@ gridline-color: rgb(255, 255, 255);</string>
       <string>Grey Background</string>
      </property>
     </widget>
+    <widget class="QComboBox" name="comboBox">
+     <property name="geometry">
+      <rect>
+       <x>130</x>
+       <y>120</y>
+       <width>72</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: rgb(255, 255, 255);</string>
+     </property>
+     <item>
+      <property name="text">
+       <string>None</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Gaussian</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Laplacian</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>High-pass</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Prewitt Hx</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Prewitt Hy</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Sobel Hx</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Sobel Hy</string>
+      </property>
+     </item>
+    </widget>
    </widget>
    <widget class="QLabel" name="label_8">
     <property name="geometry">

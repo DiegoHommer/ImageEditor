@@ -398,7 +398,7 @@ void zoomIn(QImage &img)
             QColor pixel1 = zoomedImage.pixelColor(x,y - 1);
             QColor pixel2 = zoomedImage.pixelColor(x,y + 1);
 
-            // (Zoomed image pixels located at even rows and uneven columns simultaneously)
+            // (Zoomed image pixels located at uneven rows)
             QColor interpol_color = linear_interpolation(pixel1, pixel2);
             zoomedImage.setPixelColor(x, y, interpol_color);
         }

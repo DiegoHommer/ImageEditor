@@ -273,6 +273,84 @@ void MainWindow::on_ConvolveButton_clicked()
     }
 }
 
+void MainWindow::on_comboBox_currentIndexChanged(int index)
+{
+    // Lambda function for setting the kernel values in the UI
+    auto setKernelValues = [this](double val1, double val4, double val7,
+                                  double val2, double val5, double val8,
+                                  double val3, double val6, double val9)
+    {
+        ui->Kernel1->setValue(val1);
+        ui->Kernel2->setValue(val2);
+        ui->Kernel3->setValue(val3);
+        ui->Kernel4->setValue(val4);
+        ui->Kernel5->setValue(val5);
+        ui->Kernel6->setValue(val6);
+        ui->Kernel7->setValue(val7);
+        ui->Kernel8->setValue(val8);
+        ui->Kernel9->setValue(val9);
+    };
+
+    switch(index)
+    {
+        // Gaussian filter selected
+        case 1:
+            setKernelValues(0.0625, 0.125, 0.0625,
+                            0.125,  0.25,  0.125,
+                            0.0625, 0.125, 0.0625);
+            break;
+
+        // Laplacian filter selected
+        case 2:
+            setKernelValues(0, -1, 0,
+                            -1, 4, -1,
+                            0, -1, 0);
+            break;
+
+        // Generic High-pass filter selected
+        case 3:
+            setKernelValues(-1, -1, -1,
+                            -1, 8, -1,
+                            -1, -1, -1);
+            break;
+
+        // Prewitt Hx filter selected
+        case 4:
+            setKernelValues(-1, 0, 1,
+                            -1, 0, 1,
+                            -1, 0, 1);
+            break;
+
+        // Prewitt Hy filter selected
+        case 5:
+            setKernelValues(-1, -1, -1,
+                            0, 0, 0,
+                            1, 1, 1);
+            break;
+
+        // Sobel Hx filter selected
+        case 6:
+            setKernelValues(-1, 0, 1,
+                            -2, 0, 2,
+                            -1, 0, 1);
+            break;
+
+        // Sobel Hy filter selected
+        case 7:
+            setKernelValues(-1, -2, -1,
+                            0, 0, 0,
+                            1, 2, 1);
+            break;
+
+        default:
+            setKernelValues(0.11111, 0.11111, 0.11111,
+                            0.11111, 0.11111, 0.11111,
+                            0.11111, 0.11111, 0.11111);
+            break;
+    }
+}
+
+
 void MainWindow::on_SaveButton_clicked()
 {
     if(new_imageObj != nullptr)
