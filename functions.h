@@ -4,9 +4,13 @@
 #include <bits/stdc++.h>
 #include <iostream>
 #include <QImage>
-#include <QLabel>
 #include <QPainter>
 #include <QMessageBox>
+#include <QMainWindow>
+#include <QtCharts/QChartView>
+#include <QtCharts/QBarSeries>
+#include <QtCharts/QBarSet>
+#include <QtCharts/QBarCategoryAxis>
 
 using namespace std;
 
@@ -181,7 +185,7 @@ void linear_transformations(QImage &img, double scale, int option)
     }
 }
 
-void display_histogram(vector<int> histogram, QLabel &hist_window, QString window_name)
+void display_histogram(vector<int> histogram, QMainWindow &hist_window, QString window_name)
 {
     float scaling_factor = 255.0 / *std::max_element(histogram.begin(), histogram.end());
 
@@ -192,27 +196,35 @@ void display_histogram(vector<int> histogram, QLabel &hist_window, QString windo
             *it = static_cast<int>(*it * scaling_factor);
     }
 
-    // Declare the PixelMap that will serve as the "canvas"
-    QPixmap hist_map(255, 255);
-    hist_map.fill(Qt::white);
 
-    QPainter painter(&hist_map);
-
-    // Painting normalized histogram columns for display
-    for(int i = 0; i < 256; i++)
-    {
-            int xPos = i;
-            int yPos = 260 - histogram[i];
-            int columnWidth = 1;
-            int columnHeight = histogram[i];
-
-            // Paints a column (top to bottom) starting from (xPos,yPos) with columnHeight black pixels
-            painter.fillRect(QRect(xPos, yPos, columnWidth, columnHeight), Qt::black);
+    // Create a set of bars and add the histogram data to each respective bar
+    QBarSet *barSet = new QBarSet("Histogram");
+    barSet->setColor(Qt::black);
+    for (int i = 0; i < histogram.size(); ++i) {
+        *barSet << histogram[i];
     }
+    QBarSeries *series = new QBarSeries();
+    series->append(barSet);
+    series->setBarWidth(1);
 
-    // Setup window for display
+    // Create chart and set properties
+    QChart *chart = new QChart();
+    chart->addSeries(series);
+
+    // Attach axes to the chart
+    chart->createDefaultAxes();
+    chart->legend()->setVisible(false);
+    chart->setBackgroundBrush(QBrush(Qt::white));
+
+    // Create chart view
+    QChartView *chartView = new QChartView(chart);
+    chartView->setBackgroundBrush(QBrush(Qt::white));
+
+    // Set up main window
+    hist_window.setCentralWidget(chartView);
     hist_window.setWindowTitle(window_name);
-    hist_window.setPixmap(hist_map.scaled(hist_window.height(), hist_window.width(), Qt::KeepAspectRatio));
+    hist_window.setMinimumSize(709, 500);
+    hist_window.resize(709, 500);
     hist_window.show();
 }
 
@@ -238,7 +250,7 @@ void generate_histogram(QImage &img, vector<int>& histogram, bool isGrey)
     }
 }
 
-void equalize_histogram(QImage &img, QLabel &hist_window_before, QLabel &hist_window_after, bool isGrey)
+void equalize_histogram(QImage &img, QMainWindow &hist_window_before, QMainWindow &hist_window_after, bool isGrey)
 {
     vector<int> original_histogram(256,0);
     vector<int> equalized_histogram(256,0);
@@ -502,7 +514,7 @@ void convolve(QImage &img, vector<double> kernel, bool embossing)
     img = outputImage;
 }
 
-void histogram_matching(QImage &img_src, QImage &img_target, QLabel &hist_window_before, QLabel &hist_window_after)
+void histogram_matching(QImage &img_src, QImage &img_target, QMainWindow &hist_window_before, QMainWindow &hist_window_after)
 {
     vector<int> src_histogram(256,0);
     vector<int> target_histogram(256,0);

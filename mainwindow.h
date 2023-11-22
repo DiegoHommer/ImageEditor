@@ -57,8 +57,8 @@ private:
     QLabel *originalImage_window = new QLabel();
     QLabel *newImage_window = new QLabel();
     QLabel *newImageBeforeMatching_window = new QLabel();
-    QLabel *histogram_before_window = new QLabel();
-    QLabel *histogram_window = new QLabel();
+    QMainWindow *histogram_before_window = new QMainWindow();
+    QMainWindow *histogram_window = new QMainWindow();
     bool isGreyScale = false;
 };
 #endif // MAINWINDOW_H
